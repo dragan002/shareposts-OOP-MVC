@@ -1,8 +1,10 @@
 <?php
 class Users extends Controller
 {
+  protected $userModel;
   public function __construct()
   {
+    $this->userModel = $this->model("User");
   }
 
   public function register()
@@ -30,6 +32,11 @@ class Users extends Controller
 
       if (empty($data['email'])) {
         $data['email_err'] = 'Please enter email';
+      } else {
+        //check email
+        if ($this->userModel->findUserByEmail($data['email'])) {
+          $data['email_err'] = 'Email is already taken';
+        }
       }
 
       // validate name
@@ -112,7 +119,17 @@ class Users extends Controller
       // Check if there are any errors
       if (empty($data['email_err']) && empty($data['password_err'])) {
         // Success: Perform login action or redirect to the desired page
-        die('Success');
+
+
+        //hash password 
+        $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+
+        // register user
+        if ($this->userModel->register($data)) {
+          redirect('users/login');
+        } else {
+          die("Something wrong");
+        };
       } else {
         // Errors: Load view with errors
         $this->view('users/login', $data);
